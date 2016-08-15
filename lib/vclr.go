@@ -376,6 +376,10 @@ func CallSiteMethylation(siteSorted *VcAlignment, threshold float64) string {
 	return call
 }
 
+func CallSite(siteSorted *VcAlignment, threshold float64) string {
+	call := siteSorted.CallSiteOnCodingStrand(threshold)
+	return call
+}
 
 func ParseAlignmentFile(filePath string) *VcAlignment {
 	file, err := os.Open(filePath)

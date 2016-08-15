@@ -155,12 +155,16 @@ func callSingleStrandMethylation(vca *vclr.VcAlignment, threshold *float64) {
 	fmt.Printf("complement %% called methyl %v\n", meanFloatSlice(&complementMethylPercents))
 }
 
-func callMethylationBySite(vca *vclr.VcAlignment, threshold *float64) {
+func callSites(vca *vclr.VcAlignment, threshold *float64, canonical bool) {
 	// group the alignment by site
-	bySite_template := vca.GroupByStrand()["c"].GroupBySite()
-	//bySite := vca.GroupBySite()
-	for site, aln := range bySite_template {
-		call := vclr.CallSiteMethylation(aln, *threshold)
+	bySite := vca.GroupBySite()
+	for site, aln := range bySite {
+		var call string
+		if !canonical {
+			call = vclr.CallSiteMethylation(aln, *threshold)
+		} else {
+			call = vclr.CallSite(aln, *threshold)
+		}
 		fmt.Println(site, call)
 	}
 }
@@ -194,7 +198,11 @@ func main() {
 	} else if *tool == "smMethyl" {
 		callSingleStrandMethylation(vca, threshold)
 	} else {
-		callMethylationBySite(vca, threshold)
+		if *tool == "variant" {
+			callSites(vca, threshold, true)
+		} else {
+			callSites(vca, threshold, false)
+		}
 	}
 
 }
