@@ -376,9 +376,10 @@ func CallSiteMethylation(siteSorted *VcAlignment, threshold float64) string {
 	return call
 }
 
-func CallSite(siteSorted *VcAlignment, threshold float64) string {
+func CallSite(siteSorted *VcAlignment, threshold float64) (string, int) {
 	call := siteSorted.CallSiteOnCodingStrand(threshold)
-	return call
+	coverage := len(siteSorted.Records)
+	return call, coverage
 }
 
 func ParseAlignmentFile(filePath string) *VcAlignment {
