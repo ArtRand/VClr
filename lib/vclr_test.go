@@ -4,6 +4,7 @@ import (
 	"testing"
 	"github.com/stretchr/testify/assert"
 	"os"
+	"fmt"
 )
 
 func getTestingFile() string {
@@ -39,6 +40,17 @@ func TestVcAlignment_GroupBySite(t *testing.T) {
 	assert.True(t, len(bySite) == 2)
 }
 
+func TestVcAlignment_GroupByStrand(t *testing.T) {
+	file := getTestingFile()
+	vca := ParseAlignmentFile(file)
+	byStrand := vca.GroupByStrand()
+	for strand, aln := range byStrand {
+		for _, r := range aln.Records {
+			assert.True(t, r.strand == strand)
+		}
+	}
+}
+
 func TestCallGatcMotifs(t *testing.T) {
 	file := getTestingFile()
 	vca := ParseAlignmentFile(file)
@@ -65,6 +77,13 @@ func TestCallGatcMotifs(t *testing.T) {
 	assert.True(t, hemiMethylCalls == 1)
 }
 
+func TestCallSingleMoleculeMethylation(t *testing.T) {
+	file := getTestingFile()
+	vca := ParseAlignmentFile(file)
+	results := CallSingleMoleculeMethylation(vca, 0.0)
+	fmt.Println(results)
+}
+
 func TestCallSingleMoleculeCanonicalVariants(t *testing.T) {
 	file := "../canonical_vc.tsv"
 	_, ok := os.Stat(file)
@@ -80,5 +99,36 @@ func TestCallSingleMoleculeCanonicalVariants(t *testing.T) {
 			assert.True(t, siteCall.Call == "A")
 		}
 	}
+}
 
+func strandAccuracyTest(results [][]*VariantCall) float64 {
+	var correct float64 = 0.0
+	var totCalls float64 = 0.0
+	for _, readResult := range results {
+		for _, siteCall := range readResult {
+			if siteCall.Call == "A" {
+				correct += 1
+				totCalls += 1
+			} else {
+				totCalls += 1
+			}
+		}
+	}
+	return correct / totCalls * 100
+}
+
+func TestStrandAccuracy(t *testing.T) {
+	file := "../canonical_vc.tsv"
+	_, ok := os.Stat(file)
+	if ok != nil {
+		panic("Didn't find testing file")
+	}
+	vca := ParseAlignmentFile(file)
+	byStrand := vca.GroupByStrand()
+	results := CallSingleMoleculeCanonicalVariants(byStrand["t"], 0.1)
+	percentCorrect := strandAccuracyTest(results)
+	assert.True(t, percentCorrect >= 80)
+	results = CallSingleMoleculeCanonicalVariants(byStrand["c"], 0.1)
+	percentCorrect = strandAccuracyTest(results)
+	assert.True(t, percentCorrect >= 80)
 }

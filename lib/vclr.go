@@ -86,6 +86,22 @@ func (self *VcAlignment) GroupBySite() map[int]*VcAlignment {
 	return grouped
 }
 
+func (self *VcAlignment) GroupByStrand() map[string]*VcAlignment {
+	grouped := make(map[string]*VcAlignment)
+	for _, r := range self.Records {
+		strand := r.strand
+		_, contains := grouped[strand]
+		if !contains {
+			vca := VcAlignmentConstruct()
+			vca.AddRecord(r)
+			grouped[strand] = vca
+		} else {
+			grouped[strand].AddRecord(r)
+		}
+	}
+	return grouped
+}
+
 func reverseComplementBase(b string) string {
 	switch {
 	case b == "A":
@@ -134,7 +150,7 @@ func checkProbs(probs map[string]float64, allowedDiff float64) bool {
 }
 
 // CallSiteOnStrand does not correct for forward/backward template/complement, it just calls the base with the argmax
-// probability. Not suitable for calling canonical variants
+// probability
 func (self *VcAlignment) CallSiteOnStrand(threshold float64) string {
 	site := self.Records[0].refPos
 	probs := make(map[string]float64)
@@ -156,6 +172,7 @@ func (self *VcAlignment) CallSiteOnStrand(threshold float64) string {
 		return call
 	}
 	normalizeProbs(&probs)
+	fmt.Println(site, probs)
 	probsCheck := checkProbs(probs, 0.01)
 	if !probsCheck {
 		err := fmt.Sprintf("normalization didn't work probs: %v", probs)
@@ -174,7 +191,7 @@ func (self *VcAlignment) CallSiteOnStrand(threshold float64) string {
 }
 
 // CallSiteOnCodingStrand respects that there can be template and complement alignments, it corrects to the forward/
-// template 'coding' orientation it aggregates the probabilities from both tempalte and complement reads (assuming they
+// template 'coding' orientation it aggregates the probabilities from both template and complement reads (assuming they
 // are above the threshold)
 func (self *VcAlignment) CallSiteOnCodingStrand(threshold float64) string {
 	site := self.Records[0].refPos
@@ -317,6 +334,32 @@ func CallSingleMoleculeCanonicalVariants(alignment *VcAlignment, threshold float
 		for site, alignedPairs := range bySite {
 			// call the reference position
 			call := alignedPairs.CallSiteOnCodingStrand(threshold)
+			strandCalls[site] = call
+		}
+		calls := make([]*VariantCall, 0)  // could make this length known
+		for site, call := range strandCalls {
+			vc := VariantCallConstruct(site, call, readLabel, readScore)
+			calls = append(calls, vc)
+		}
+		results = append(results, calls)
+	}
+	return results
+}
+
+func CallSingleMoleculeMethylation(alignment *VcAlignment, threshold float64) [][]*VariantCall {
+	results := make([][]*VariantCall, 0)
+	// alignment is not sorted by read, so sort by read (single molecules) first
+	byRead := alignment.GroupByRead()
+	for readLabel, aln := range byRead {
+		// get the score for this read
+		readScore := aln.ScoreRead()
+		// group by site
+		bySite := aln.GroupBySite()
+		// strandCalls is a map of sites to calls, map[site]call
+		strandCalls := make(map[int]string)
+		for site, alignedPairs := range bySite {
+			// call the reference position
+			call := alignedPairs.CallSiteOnStrand(threshold)
 			strandCalls[site] = call
 		}
 		calls := make([]*VariantCall, 0)  // could make this length known
