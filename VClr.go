@@ -5,6 +5,8 @@ import (
 	"fmt"
 	vclr "github.com/ArtRand/VClr/lib"
 	"math"
+	"os"
+	"bufio"
 )
 
 func callGatcMethylation(vca *vclr.VcAlignment, threshold *float64) {
@@ -154,20 +156,23 @@ func check(ok error, msg string) {
 
 func main() {
 	inFile := flag.String("f", "", "file location")
-	//refFasta := flag.String("r", "", "reference location")
+	refFasta := flag.String("r", "", "reference location")
 	threshold := flag.Float64("t", 0.0, "threshold")
+	tool := flag.String("tool", "smVariant", "Tool to use options are: \n" +
+		" single molecule variant: smVariant\n" +
+		" single molecule methylation: smMethyl\n")
 	flag.Parse()
 	vca := vclr.ParseAlignmentFile(*inFile)
 
-	//fH, ok := os.Open(*refFasta)
-	//check(ok, fmt.Sprintf("Error opening file %v", *inFile))
-	//defer fH.Close()
-
-	//fqr := vclr.FqReader{Reader: bufio.NewReader(fH)}
-	//r, _ := fqr.Iter()
-
 	//callGatcMethylation(vca, threshold)
-	//callSingleStrandVariants(vca, threshold, r.Seq)
-	callSingleStrandMethylation(vca, threshold)
-
+	if *tool == "smVariant" {
+		fH, ok := os.Open(*refFasta)
+		check(ok, fmt.Sprintf("Error opening file %v", *inFile))
+		defer fH.Close()
+		fqr := vclr.FqReader{Reader: bufio.NewReader(fH)}
+		r, _ := fqr.Iter()
+		callSingleStrandVariants(vca, threshold, r.Seq)
+	} else {
+		callSingleStrandMethylation(vca, threshold)
+	}
 }
