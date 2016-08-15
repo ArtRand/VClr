@@ -172,7 +172,6 @@ func (self *VcAlignment) CallSiteOnStrand(threshold float64) string {
 		return call
 	}
 	normalizeProbs(&probs)
-	fmt.Println(site, probs)
 	probsCheck := checkProbs(probs, 0.01)
 	if !probsCheck {
 		err := fmt.Sprintf("normalization didn't work probs: %v", probs)

@@ -129,13 +129,11 @@ func callSingleStrandMethylation(vca *vclr.VcAlignment, threshold *float64) {
 		temScore := math.NaN()
 		comScore := math.NaN()
 		if hasTemplate {
-			fmt.Println("template:")
 			templateResults := vclr.CallSingleMoleculeMethylation(byStrand["t"], *threshold)
 			tem_percentMethyl, temScore = calculatePercentCalledMethyl(templateResults)
 			tempalteMethylPercents = append(tempalteMethylPercents, tem_percentMethyl)
 		}
 		if hasComplement {
-			fmt.Println("complement:")
 			complementResults := vclr.CallSingleMoleculeMethylation(byStrand["c"], *threshold)
 			com_percentMethyl, comScore = calculatePercentCalledMethyl(complementResults)
 			complementMethylPercents = append(complementMethylPercents, com_percentMethyl)
