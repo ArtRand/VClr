@@ -76,7 +76,7 @@ func calculatePercentCalledMethyl(results [][]*vclr.VariantCall) (float64, float
 	var readScore float64 = 0.0
 	for _, siteCall := range readResult {
 		readScore = siteCall.ReadScore
-		if siteCall.Call == "I" {
+		if siteCall.Call == "I" || siteCall.Call == "E" {
 			numCalledMethyl += 1
 			numCalled += 1
 		} else {
