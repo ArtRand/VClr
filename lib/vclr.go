@@ -376,9 +376,14 @@ func CallSiteMethylation(siteSorted *VcAlignment, threshold float64) string {
 	return call
 }
 
+func coverage(siteSorted *VcAlignment) int {
+	byRead := siteSorted.GroupByRead()
+	return len(byRead)
+}
+
 func CallSite(siteSorted *VcAlignment, threshold float64) (string, int) {
 	call := siteSorted.CallSiteOnCodingStrand(threshold)
-	coverage := len(siteSorted.Records)
+	coverage := coverage(siteSorted)
 	return call, coverage
 }
 
