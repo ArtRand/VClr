@@ -104,13 +104,22 @@ func callSingleStrandVariants(vca *vclr.VcAlignment, threshold *float64, referen
 	complementAccuracies := make([]float64, 0)
 	for read, aln := range byRead {
 		byStrand := aln.GroupByStrand()
-		templateResults := vclr.CallSingleMoleculeCanonicalVariants(byStrand["t"], *threshold)
-		complementResults := vclr.CallSingleMoleculeCanonicalVariants(byStrand["c"], *threshold)
-		// calculate the accuracy for each one
-		templateAccuracy, temScore := compareCallsToReference(templateResults, reference)
-		complementAccuracy, comScore := compareCallsToReference(complementResults, reference)
-		templateAccuracies = append(templateAccuracies, templateAccuracy)
-		complementAccuracies = append(complementAccuracies, complementAccuracy)
+		_, hasTemplate := byStrand["t"]
+		_, hasComplement := byStrand["c"]
+		templateAccuracy := math.NaN()
+		complementAccuracy := math.NaN()
+		temScore := math.NaN()
+		comScore := math.NaN()
+		if hasTemplate {
+			templateResults := vclr.CallSingleMoleculeCanonicalVariants(byStrand["t"], *threshold)
+			templateAccuracy, temScore = compareCallsToReference(templateResults, reference)
+			templateAccuracies = append(templateAccuracies, templateAccuracy)
+		}
+		if hasComplement {
+			complementResults := vclr.CallSingleMoleculeCanonicalVariants(byStrand["c"], *threshold)
+			complementAccuracy, comScore = compareCallsToReference(complementResults, reference)
+			complementAccuracies = append(complementAccuracies, complementAccuracy)
+		}
 		fmt.Printf("%v\t%v\t%v\t%v\t%v\n", read, templateAccuracy, complementAccuracy, temScore, comScore)
 	}
 	fmt.Printf("mean template accuracy %v\n", meanFloatSlice(&templateAccuracies))
