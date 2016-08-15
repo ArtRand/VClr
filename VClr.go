@@ -155,6 +155,15 @@ func callSingleStrandMethylation(vca *vclr.VcAlignment, threshold *float64) {
 	fmt.Printf("complement %% called methyl %v\n", meanFloatSlice(&complementMethylPercents))
 }
 
+func callMethylationBySite(vca *vclr.VcAlignment, threshold *float64) {
+	// group the alignment by site
+	bySite_template := vca.GroupByStrand()["t"].GroupBySite()
+	for site, aln := range bySite_template {
+		call := vclr.CallSiteMethylation(aln, *threshold)
+		fmt.Println(site, call)
+	}
+}
+
 func check(ok error, msg string) {
 	if ok != nil {
 		panic(msg)
@@ -181,7 +190,10 @@ func main() {
 		fqr := vclr.FqReader{Reader: bufio.NewReader(fH)}
 		r, _ := fqr.Iter()
 		callSingleStrandVariants(vca, threshold, r.Seq)
-	} else {
+	} else if *tool == "smMethyl" {
 		callSingleStrandMethylation(vca, threshold)
+	} else {
+		callMethylationBySite(vca, threshold)
 	}
+
 }

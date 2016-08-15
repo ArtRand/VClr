@@ -132,3 +132,18 @@ func TestStrandAccuracy(t *testing.T) {
 	percentCorrect = strandAccuracyTest(results)
 	assert.True(t, percentCorrect >= 80)
 }
+
+func TestCallSiteMethylation (t *testing.T) {
+	file := "../probs.tsv"
+	_, ok := os.Stat(file)
+	if ok != nil {
+		panic("Didn't find testing file")
+	}
+	vca := ParseAlignmentFile(file)
+	bySite_template := vca.GroupByStrand()["t"].GroupBySite()
+	//bySite := vca.GroupBySite()
+	for site, aln := range bySite_template {
+		call := CallSiteMethylation(aln, 0.0)
+		fmt.Println(site, call)
+	}
+}

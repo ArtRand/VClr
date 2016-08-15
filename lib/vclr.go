@@ -371,6 +371,11 @@ func CallSingleMoleculeMethylation(alignment *VcAlignment, threshold float64) []
 	return results
 }
 
+func CallSiteMethylation(siteSorted *VcAlignment, threshold float64) string {
+	call := siteSorted.CallSiteOnStrand(threshold)
+	return call
+}
+
 
 func ParseAlignmentFile(filePath string) *VcAlignment {
 	file, err := os.Open(filePath)
