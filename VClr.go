@@ -157,8 +157,9 @@ func callSingleStrandMethylation(vca *vclr.VcAlignment, threshold *float64) {
 
 func callMethylationBySite(vca *vclr.VcAlignment, threshold *float64) {
 	// group the alignment by site
-	bySite_template := vca.GroupByStrand()["t"].GroupBySite()
-	for site, aln := range bySite_template {
+	//bySite_template := vca.GroupByStrand()["t"].GroupBySite()
+	bySite := vca.GroupBySite()
+	for site, aln := range bySite {
 		call := vclr.CallSiteMethylation(aln, *threshold)
 		fmt.Println(site, call)
 	}
