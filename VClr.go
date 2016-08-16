@@ -44,7 +44,7 @@ func callGatcMethylation(vca *vclr.VcAlignment, threshold *float64) {
 	}
 }
 
-func compareCallsToReference(results [][]*vclr.VariantCall, reference string) (accuracy float64, score float64) {
+func compareCallsToReference(results [][]*vclr.VariantCall, reference string) (float64, float64) {
 	if len(results) > 1 {
 		err := fmt.Sprintf("compareCallsToReference: got more than one read's worth of results? %v", results)
 		panic(err)
@@ -120,10 +120,10 @@ func callSingleStrandVariants(vca *vclr.VcAlignment, threshold *float64, referen
 			complementAccuracy, comScore = compareCallsToReference(complementResults, reference)
 			complementAccuracies = append(complementAccuracies, complementAccuracy)
 		}
-		fmt.Printf("%v\t%v\t%v\t%v\t%v\n", read, templateAccuracy, complementAccuracy, temScore, comScore)
+		fmt.Fprintf(os.Stdout, "%v\t%v\t%v\t%v\t%v\n", read, templateAccuracy, complementAccuracy, temScore, comScore)
 	}
-	fmt.Printf("mean template accuracy %v\n", meanFloatSlice(&templateAccuracies))
-	fmt.Printf("mean complement accuracy %v\n", meanFloatSlice(&complementAccuracies))
+	fmt.Fprintf(os.Stderr, "mean template accuracy %v\n", meanFloatSlice(&templateAccuracies))
+	fmt.Fprintf(os.Stderr, "mean complement accuracy %v\n", meanFloatSlice(&complementAccuracies))
 }
 
 func callSingleStrandMethylation(vca *vclr.VcAlignment, threshold *float64) {
@@ -149,13 +149,13 @@ func callSingleStrandMethylation(vca *vclr.VcAlignment, threshold *float64) {
 			com_percentMethyl, comScore = calculatePercentCalledMethyl(complementResults)
 			complementMethylPercents = append(complementMethylPercents, com_percentMethyl)
 		}
-		fmt.Printf("%v\t%v\t%v\t%v\t%v\n", read, tem_percentMethyl, com_percentMethyl, temScore, comScore)
+		fmt.Fprintf(os.Stdout, "%v\t%v\t%v\t%v\t%v\n", read, tem_percentMethyl, com_percentMethyl, temScore, comScore)
 	}
-	fmt.Printf("template %% called methyl %v\n", meanFloatSlice(&tempalteMethylPercents))
-	fmt.Printf("complement %% called methyl %v\n", meanFloatSlice(&complementMethylPercents))
+	fmt.Fprintf(os.Stderr, "template %% called methyl %v\n", meanFloatSlice(&tempalteMethylPercents))
+	fmt.Fprintf(os.Stderr, "complement %% called methyl %v\n", meanFloatSlice(&complementMethylPercents))
 }
 
-func callSites(vca *vclr.VcAlignment, threshold *float64, canonical bool) {
+func callSites(vca *vclr.VcAlignment, threshold *float64, canonical bool, reference string) {
 	// group the alignment by site
 	bySite := vca.GroupBySite()
 	for site, aln := range bySite {
@@ -168,7 +168,6 @@ func callSites(vca *vclr.VcAlignment, threshold *float64, canonical bool) {
 			call, coverage = vclr.CallSite(aln, *threshold)
 			fmt.Println(site, call, coverage)
 		}
-
 	}
 }
 
