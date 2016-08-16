@@ -155,7 +155,7 @@ func callSingleStrandMethylation(vca *vclr.VcAlignment, threshold *float64) {
 	fmt.Fprintf(os.Stderr, "complement %% called methyl %v\n", meanFloatSlice(&complementMethylPercents))
 }
 
-func callSites(vca *vclr.VcAlignment, threshold *float64, canonical bool, reference string) {
+func callSites(vca *vclr.VcAlignment, threshold *float64, canonical bool) {
 	// group the alignment by site
 	bySite := vca.GroupBySite()
 	for site, aln := range bySite {
