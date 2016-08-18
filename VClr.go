@@ -162,8 +162,8 @@ func callSites(vca *vclr.VcAlignment, threshold *float64, canonical bool) {
 		var call string
 		var coverage int
 		if !canonical {
-			call = vclr.CallSiteMethylation(aln, *threshold)
-			fmt.Println(site, call)
+			call, coverage = vclr.CallSiteMethylation(aln, *threshold)
+			fmt.Println(site, call, coverage)
 		} else {
 			call, coverage = vclr.CallSite(aln, *threshold)
 			fmt.Println(site, call, coverage)

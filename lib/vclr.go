@@ -371,9 +371,10 @@ func CallSingleMoleculeMethylation(alignment *VcAlignment, threshold float64) []
 	return results
 }
 
-func CallSiteMethylation(siteSorted *VcAlignment, threshold float64) string {
+func CallSiteMethylation(siteSorted *VcAlignment, threshold float64) (string, int) {
 	call := siteSorted.CallSiteOnStrand(threshold)
-	return call
+	coverage := coverage(siteSorted)
+	return call, coverage
 }
 
 func coverage(siteSorted *VcAlignment) int {
