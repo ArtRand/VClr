@@ -193,14 +193,14 @@ func main() {
 	vca := vclr.ParseAlignmentFile(*inFile)
 	var alns *vclr.VcAlignment
 	if *templateOnly {
-		alns = vca
-	} else {
 		byStrand := vca.GroupByStrand()
 		_, check := byStrand["t"]
 		if !check {
 			panic("Didn't find any template reads?")
 		}
 		alns = byStrand["t"]
+	} else {
+		alns = vca
 	}
 
 	//callGatcMethylation(vca, threshold)
