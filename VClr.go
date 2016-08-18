@@ -183,27 +183,44 @@ func main() {
 	inFile := flag.String("f", "", "file location")
 	refFasta := flag.String("r", "", "reference location")
 	threshold := flag.Float64("t", 0.0, "threshold")
+	templateOnly := flag.Bool("templateOnly", false, "flag to only use template strands")
 	tool := flag.String("tool", "smVariant", "Tool to use options are: \n" +
-		" single molecule variant: smVariant\n" +
-		" single molecule methylation: smMethyl\n")
+		" single molecule variant: sm-variant\n" +
+		" single molecule methylation: sm-methyl\n" +
+		" variant call: variant\n " +
+		" methylation call: methyl")
 	flag.Parse()
 	vca := vclr.ParseAlignmentFile(*inFile)
+	var alns *vclr.VcAlignment
+	if *templateOnly {
+		alns = vca
+	} else {
+		byStrand := vca.GroupByStrand()
+		_, check := byStrand["t"]
+		if !check {
+			panic("Didn't find any template reads?")
+		}
+		alns = byStrand["t"]
+	}
 
 	//callGatcMethylation(vca, threshold)
-	if *tool == "smVariant" {
+	if *tool == "sm-variant" {
 		fH, ok := os.Open(*refFasta)
 		check(ok, fmt.Sprintf("Error opening file %v", *inFile))
 		defer fH.Close()
 		fqr := vclr.FqReader{Reader: bufio.NewReader(fH)}
 		r, _ := fqr.Iter()
-		callSingleStrandVariants(vca, threshold, r.Seq)
-	} else if *tool == "smMethyl" {
-		callSingleStrandMethylation(vca, threshold)
+		callSingleStrandVariants(alns, threshold, r.Seq)
+	} else if *tool == "sm-methyl" {
+		callSingleStrandMethylation(alns, threshold)
 	} else {
 		if *tool == "variant" {
-			callSites(vca, threshold, true)
+			callSites(alns, threshold, true)
+		} else if *tool == "methyl" {
+			callSites(alns, threshold, false)
 		} else {
-			callSites(vca, threshold, false)
+			err := fmt.Sprintf("Error, tool %v not recognised", *tool)
+			panic(err)
 		}
 	}
 
