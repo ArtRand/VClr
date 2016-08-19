@@ -102,6 +102,45 @@ func (self *VcAlignment) GroupByStrand() map[string]*VcAlignment {
 	return grouped
 }
 
+func (self *VcAlignment) FilterByReadScore(threshold float64) *VcAlignment {
+	filtered := VcAlignmentConstruct()
+	byRead := self.GroupByRead()
+	for _, df := range byRead {
+		byStrand := df.GroupByStrand()
+		_, hasTemplate := byStrand["t"]
+		_, hasComplement := byStrand["c"]
+		if hasTemplate {
+			templateScore := byStrand["t"].ScoreRead()
+			if templateScore >= threshold {
+				for _, r := range byStrand["t"].Records {
+					filtered.AddRecord(r)
+				}
+			}
+		}
+		if hasComplement {
+			complementScore := byStrand["c"].ScoreRead()
+			if complementScore >= threshold {
+				for _, r := range byStrand["c"].Records {
+					filtered.AddRecord(r)
+				}
+			}
+		}
+	}
+	return filtered
+}
+
+func (self *VcAlignment) ScoreRead() float64 {
+	firstReadLabel := self.Records[0].readLabel
+	var total float64 = 0.0
+	for _, r := range self.Records {
+		if r.readLabel != firstReadLabel {
+			panic("ScoreRead: Not sorted by read")
+		}
+		total += r.prob
+	}
+	return 100 * total / float64(len(self.Records))
+}
+
 func reverseComplementBase(b string) string {
 	switch {
 	case b == "A":
@@ -227,18 +266,6 @@ func (self *VcAlignment) CallSiteOnCodingStrand(threshold float64) string {
 		}
 	}
 	return call
-}
-
-func (self *VcAlignment) ScoreRead() float64 {
-	firstReadLabel := self.Records[0].readLabel
-	var total float64 = 0.0
-	for _, r := range self.Records {
-		if r.readLabel != firstReadLabel {
-			panic("ScoreRead: Not sorted by read")
-		}
-		total += r.prob
-	}
-	return 100 * total / float64(len(self.Records))
 }
 
 func SortedKeys(m map[int]string) []int {
@@ -372,6 +399,7 @@ func CallSingleMoleculeMethylation(alignment *VcAlignment, threshold float64) []
 }
 
 func CallSiteMethylation(siteSorted *VcAlignment, threshold float64) (string, int) {
+	// todo need something here that filters out reads by readScore
 	call := siteSorted.CallSiteOnStrand(threshold)
 	coverage := coverage(siteSorted)
 	return call, coverage

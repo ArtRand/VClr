@@ -183,6 +183,7 @@ func main() {
 	inFile := flag.String("f", "", "file location")
 	refFasta := flag.String("r", "", "reference location")
 	threshold := flag.Float64("t", 0.0, "threshold")
+	readScoreT := flag.Float64("s", 0.0, "readScore threshold")
 	templateOnly := flag.Bool("templateOnly", false, "flag to only use template strands")
 	tool := flag.String("tool", "smVariant", "Tool to use options are: \n" +
 		" single molecule variant: sm-variant\n" +
@@ -199,11 +200,12 @@ func main() {
 			panic("Didn't find any template reads?")
 		}
 		alns = byStrand["t"]
+	} else if *readScoreT > 0.0 {
+		alns = vca.FilterByReadScore(*readScoreT)
 	} else {
 		alns = vca
 	}
 
-	//callGatcMethylation(vca, threshold)
 	if *tool == "sm-variant" {
 		fH, ok := os.Open(*refFasta)
 		check(ok, fmt.Sprintf("Error opening file %v", *inFile))
