@@ -399,7 +399,6 @@ func CallSingleMoleculeMethylation(alignment *VcAlignment, threshold float64) []
 }
 
 func CallSiteMethylation(siteSorted *VcAlignment, threshold float64) (string, int) {
-	// todo need something here that filters out reads by readScore
 	call := siteSorted.CallSiteOnStrand(threshold)
 	coverage := coverage(siteSorted)
 	return call, coverage
@@ -448,3 +447,28 @@ func ParseAlignmentFile(filePath string) *VcAlignment {
 	return VcA
 }
 
+type SiteCallStats struct {
+		nMethylCalls int
+		nCalls int
+}
+
+func SiteCallStatsConstruct() *SiteCallStats {
+	return &SiteCallStats{nMethylCalls: 0, nCalls: 0}
+}
+
+func (self *SiteCallStats) AddCall(call string) {
+	if call == "E" || call == "I" {
+		self.nMethylCalls += 1
+		self.nCalls += 1
+	} else {
+		self.nCalls += 1
+	}
+}
+
+func (self *SiteCallStats) PercentMethylatedCalls() float64 {
+	return (float64(self.nMethylCalls) / float64(self.nCalls)) * 100
+}
+
+func (self *SiteCallStats) PercentCanonicalCalls() float64 {
+	return 100.0 - self.PercentMethylatedCalls()
+}

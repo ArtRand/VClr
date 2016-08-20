@@ -155,6 +155,35 @@ func callSingleStrandMethylation(vca *vclr.VcAlignment, threshold *float64) {
 	fmt.Fprintf(os.Stderr, "complement %% called methyl %v\n", meanFloatSlice(&complementMethylPercents))
 }
 
+func singleMoleculeSiteStats(vca *vclr.VcAlignment, threshold *float64) {
+	// a map of ref_positions to call stats
+	siteCalls := make(map[int]*vclr.SiteCallStats)
+	// group by read first, because there could be many more sites than reads, and each read will only
+	// map to a subset of the sites
+	byRead := vca.GroupByRead()
+	for _, readDf := range byRead {
+		// now go over all the sites reported on by this read
+		bySite := readDf.GroupBySite()
+		for site, siteDf := range bySite {
+			call, _ := vclr.CallSiteMethylation(siteDf, *threshold)
+			_, check := siteCalls[site]
+			if !check {
+				siteCalls[site] = vclr.SiteCallStatsConstruct()
+				siteCalls[site].AddCall(call)
+			} else {
+				siteCalls[site].AddCall(call)
+			}
+		}
+	}
+	if len(siteCalls) == 0 {
+		panic("Didn't accumulate any site calls?")
+	}
+	// output the results
+	for site, stats := range siteCalls {
+		fmt.Printf("%v\t%v\t%v\n", site, stats.PercentMethylatedCalls(), stats.PercentCanonicalCalls())
+	}
+}
+
 func callSites(vca *vclr.VcAlignment, threshold *float64, canonical bool) {
 	// group the alignment by site
 	bySite := vca.GroupBySite()
@@ -215,6 +244,8 @@ func main() {
 		callSingleStrandVariants(alns, threshold, r.Seq)
 	} else if *tool == "sm-methyl" {
 		callSingleStrandMethylation(alns, threshold)
+	} else if *tool == "sm-site-stats" {
+		singleMoleculeSiteStats(alns, threshold)
 	} else {
 		if *tool == "variant" {
 			callSites(alns, threshold, true)
