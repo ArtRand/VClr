@@ -472,3 +472,7 @@ func (self *SiteCallStats) PercentMethylatedCalls() float64 {
 func (self *SiteCallStats) PercentCanonicalCalls() float64 {
 	return 100.0 - self.PercentMethylatedCalls()
 }
+
+func (self *SiteCallStats) NumberOfCalls() int {
+	return self.nCalls
+}

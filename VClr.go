@@ -179,8 +179,9 @@ func singleMoleculeSiteStats(vca *vclr.VcAlignment, threshold *float64) {
 		panic("Didn't accumulate any site calls?")
 	}
 	// output the results
+	fmt.Printf("%-10s\t%-10s\t%-10s\t%-10s\n", "Site", "p_Called_Methyl ", "p_Called_Non-methyl", "n_reads")
 	for site, stats := range siteCalls {
-		fmt.Printf("%v\t%v\t%v\n", site, stats.PercentMethylatedCalls(), stats.PercentCanonicalCalls())
+		fmt.Printf("%-10v\t%-20.4f\t%-20.4f\t%-10v\n", site, stats.PercentMethylatedCalls(), stats.PercentCanonicalCalls(), stats.NumberOfCalls())
 	}
 }
 
