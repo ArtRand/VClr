@@ -190,15 +190,17 @@ func checkProbs(probs map[string]float64, allowedDiff float64) bool {
 
 // CallSiteOnStrand does not correct for forward/backward template/complement, it just calls the base with the argmax
 // probability
-func (self *VcAlignment) CallSiteOnStrand(threshold float64) string {
+func (self *VcAlignment) CallSiteOnStrand(threshold float64) (string, float64) {
 	site := self.Records[0].refPos
 	probs := make(map[string]float64)
 	call := ""
+	maxProb := math.Inf(-1)
 	for _, r := range self.Records {
 		if r.refPos != site {
 			panic("CallSiteOnStrand: Not sorted by site")
-			return ""
+			return "", maxProb
 		}
+		// marginalize over the aligned pairs, only keeping the ones that are above our threshold
 		if r.prob >= threshold {
 			base := r.base
 			prob := r.prob
@@ -207,8 +209,9 @@ func (self *VcAlignment) CallSiteOnStrand(threshold float64) string {
 			continue
 		}
 	}
+	// return empty string as null (no call)
 	if len(probs) == 0 {
-		return call
+		return call, maxProb
 	}
 	normalizeProbs(&probs)
 	probsCheck := checkProbs(probs, 0.01)
@@ -217,28 +220,27 @@ func (self *VcAlignment) CallSiteOnStrand(threshold float64) string {
 		panic(err)
 	}
 
-	maxProb := math.Inf(-1)
-
 	for base, prob := range probs {
 		if prob > maxProb {
 			maxProb = prob
 			call = base
 		}
 	}
-	return call
+	return call, maxProb
 }
 
 // CallSiteOnCodingStrand respects that there can be template and complement alignments, it corrects to the forward/
 // template 'coding' orientation it aggregates the probabilities from both template and complement reads (assuming they
 // are above the threshold)
-func (self *VcAlignment) CallSiteOnCodingStrand(threshold float64) string {
+func (self *VcAlignment) CallSiteOnCodingStrand(threshold float64) (string, float64) {
 	site := self.Records[0].refPos
 	probs := make(map[string]float64)
 	call := ""
+	maxProb := math.Inf(-1)
 	for _, r := range self.Records {
 		if r.refPos != site {
 			panic("CallSiteOnCodingStrand: Not sorted by site")
-			return ""
+			return "", maxProb
 		}
 		if r.prob >= threshold {
 			base := correctBaseForStrand(r.base, r.strand, r.forward)
@@ -248,7 +250,7 @@ func (self *VcAlignment) CallSiteOnCodingStrand(threshold float64) string {
 		}
 	}
 	if len(probs) == 0 {
-		return call
+		return call, maxProb
 	}
 	normalizeProbs(&probs)
 	probsCheck := checkProbs(probs, 0.01)
@@ -257,15 +259,13 @@ func (self *VcAlignment) CallSiteOnCodingStrand(threshold float64) string {
 		panic(err)
 	}
 
-	maxProb := math.Inf(-1)
-
 	for base, prob := range probs {
 		if prob > maxProb {
 			maxProb = prob
 			call = base
 		}
 	}
-	return call
+	return call, maxProb
 }
 
 func SortedKeys(m map[int]string) []int {
@@ -336,7 +336,7 @@ func CallSingleMoleculeGatcMethylation(alignment *VcAlignment, threshold float64
 		// strandCalls is a map of sites to calls, map[site]call
 		strandCalls := make(map[int]string)
 		for site, alignedPairs := range bySite {
-			call := alignedPairs.CallSiteOnStrand(threshold)
+			call, _ := alignedPairs.CallSiteOnStrand(threshold)
 			strandCalls[site] = call
 		}
 		sK := SortedKeys(strandCalls)
@@ -359,7 +359,7 @@ func CallSingleMoleculeCanonicalVariants(alignment *VcAlignment, threshold float
 		strandCalls := make(map[int]string)
 		for site, alignedPairs := range bySite {
 			// call the reference position
-			call := alignedPairs.CallSiteOnCodingStrand(threshold)
+			call, _ := alignedPairs.CallSiteOnCodingStrand(threshold)
 			strandCalls[site] = call
 		}
 		calls := make([]*VariantCall, 0)  // could make this length known
@@ -385,7 +385,7 @@ func CallSingleMoleculeMethylation(alignment *VcAlignment, threshold float64) []
 		strandCalls := make(map[int]string)
 		for site, alignedPairs := range bySite {
 			// call the reference position
-			call := alignedPairs.CallSiteOnStrand(threshold)
+			call, _ := alignedPairs.CallSiteOnStrand(threshold)
 			strandCalls[site] = call
 		}
 		calls := make([]*VariantCall, 0)  // could make this length known
@@ -398,10 +398,10 @@ func CallSingleMoleculeMethylation(alignment *VcAlignment, threshold float64) []
 	return results
 }
 
-func CallSiteMethylation(siteSorted *VcAlignment, threshold float64) (string, int) {
-	call := siteSorted.CallSiteOnStrand(threshold)
+func CallSiteMethylation(siteSorted *VcAlignment, threshold float64) (string, int, float64) {
+	call, prob := siteSorted.CallSiteOnStrand(threshold)
 	coverage := coverage(siteSorted)
-	return call, coverage
+	return call, coverage, prob
 }
 
 func coverage(siteSorted *VcAlignment) int {
@@ -409,10 +409,10 @@ func coverage(siteSorted *VcAlignment) int {
 	return len(byRead)
 }
 
-func CallSite(siteSorted *VcAlignment, threshold float64) (string, int) {
-	call := siteSorted.CallSiteOnCodingStrand(threshold)
+func CallSite(siteSorted *VcAlignment, threshold float64) (string, int, float64) {
+	call, prob := siteSorted.CallSiteOnCodingStrand(threshold)
 	coverage := coverage(siteSorted)
-	return call, coverage
+	return call, coverage, prob
 }
 
 func ParseAlignmentFile(filePath string) *VcAlignment {

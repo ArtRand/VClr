@@ -165,7 +165,7 @@ func singleMoleculeSiteStats(vca *vclr.VcAlignment, threshold *float64) {
 		// now go over all the sites reported on by this read
 		bySite := readDf.GroupBySite()
 		for site, siteDf := range bySite {
-			call, _ := vclr.CallSiteMethylation(siteDf, *threshold)
+			call, _, _ := vclr.CallSiteMethylation(siteDf, *threshold)
 			_, check := siteCalls[site]
 			if !check {
 				siteCalls[site] = vclr.SiteCallStatsConstruct()
@@ -188,15 +188,17 @@ func singleMoleculeSiteStats(vca *vclr.VcAlignment, threshold *float64) {
 func callSites(vca *vclr.VcAlignment, threshold *float64, canonical bool) {
 	// group the alignment by site
 	bySite := vca.GroupBySite()
+	fmt.Printf("%-10s\t%-5s\t%-5s\t%-8s\n", "Site", "Call", "Coverage", "Prob")
 	for site, aln := range bySite {
 		var call string
 		var coverage int
+		var prob float64
 		if !canonical {
-			call, coverage = vclr.CallSiteMethylation(aln, *threshold)
-			fmt.Println(site, call, coverage)
+			call, coverage, prob = vclr.CallSiteMethylation(aln, *threshold)
+			fmt.Printf("%-10v\t%-5s\t%-10v\t%-10.4f\n", site, call, coverage, prob)
 		} else {
-			call, coverage = vclr.CallSite(aln, *threshold)
-			fmt.Println(site, call, coverage)
+			call, coverage, prob = vclr.CallSite(aln, *threshold)
+			fmt.Printf("%-10v\t%-5s\t%-10v\t%-10.4f\n", site, call, coverage, prob)
 		}
 	}
 }
@@ -219,6 +221,7 @@ func main() {
 		" single molecule variant: sm-variant\n" +
 		" single molecule methylation: sm-methyl\n" +
 		" variant call: variant\n " +
+		" site stats: sm-site-stats\n" +
 		" methylation call: methyl")
 	flag.Parse()
 	vca := vclr.ParseAlignmentFile(*inFile)
