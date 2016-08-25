@@ -217,11 +217,11 @@ func main() {
 	threshold := flag.Float64("t", 0.0, "threshold")
 	readScoreT := flag.Float64("s", 0.0, "readScore threshold")
 	templateOnly := flag.Bool("templateOnly", false, "flag to only use template strands")
-	tool := flag.String("tool", "smVariant", "Tool to use options are: \n" +
-		" single molecule variant: sm-variant\n" +
-		" single molecule methylation: sm-methyl\n" +
-		" variant call: variant\n " +
-		" site stats: sm-site-stats\n" +
+	tool := flag.String("tool", "smVariant", "Tool to use options are: \n\t" +
+		" single molecule variant: sm-variant\n\t" +
+		" single molecule methylation: sm-methyl\n\t" +
+		" variant call: variant\n\t" +
+		" site stats: sm-site-stats\n\t" +
 		" methylation call: methyl")
 	flag.Parse()
 	vca := vclr.ParseAlignmentFile(*inFile)
@@ -233,10 +233,11 @@ func main() {
 			panic("Didn't find any template reads?")
 		}
 		alns = byStrand["t"]
-	} else if *readScoreT > 0.0 {
-		alns = vca.FilterByReadScore(*readScoreT)
 	} else {
 		alns = vca
+	}
+	if *readScoreT > 0.0 {
+		alns = alns.FilterByReadScore(*readScoreT)
 	}
 
 	if *tool == "sm-variant" {
