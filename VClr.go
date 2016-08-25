@@ -106,7 +106,7 @@ func meanMedianFloatSlice(slc *[]float64) (float64, float64) {
 	l := len(*slc)
 
 	if l % 2 == 0 {
-		median = ((*slc)[l / 2 - 1] + (*slc)[l / 2 + 1]) / 2.0
+		median = float64(((*slc)[l / 2 - 1] + (*slc)[l / 2 + 1]) / 2.0)
 	} else {
 		median = float64((*slc)[l / 2])
 	}
