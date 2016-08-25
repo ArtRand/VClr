@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"bufio"
+	"sort"
 )
 
 func callGatcMethylation(vca *vclr.VcAlignment, threshold *float64) {
@@ -88,12 +89,29 @@ func calculatePercentCalledMethyl(results [][]*vclr.VariantCall) (float64, float
 	return numCalledMethyl / numCalled * 100, readScore
 }
 
-func meanFloatSlice(slc *[]float64) float64 {
+func meanMedianFloatSlice(slc *[]float64) (float64, float64) {
+	if len(*slc) == 0 {
+		return math.NaN(), math.NaN()
+	}
+	// calculate the mean
 	tot := 0.0
 	for _, i := range *slc {
 		tot += i
 	}
-	return tot / float64(len(*slc))
+	mean := tot / float64(len(*slc))
+
+	// calculate the median
+	sort.Float64s(*slc)
+	var median float64
+	l := len(*slc)
+
+	if l % 2 == 0 {
+		median = ((*slc)[l / 2 - 1] + (*slc)[l / 2 + 1]) / 2.0
+	} else {
+		median = float64((*slc)[l / 2])
+	}
+
+	return mean, median
 }
 
 func callSingleStrandVariants(vca *vclr.VcAlignment, threshold *float64, reference string) {
@@ -122,8 +140,10 @@ func callSingleStrandVariants(vca *vclr.VcAlignment, threshold *float64, referen
 		}
 		fmt.Fprintf(os.Stdout, "%v\t%v\t%v\t%v\t%v\n", read, templateAccuracy, complementAccuracy, temScore, comScore)
 	}
-	fmt.Fprintf(os.Stderr, "mean template accuracy %v\n", meanFloatSlice(&templateAccuracies))
-	fmt.Fprintf(os.Stderr, "mean complement accuracy %v\n", meanFloatSlice(&complementAccuracies))
+	templateMean, templateMedian := meanMedianFloatSlice(&templateAccuracies)
+	complementMean, complementMedian := meanMedianFloatSlice(&complementAccuracies)
+	fmt.Fprintf(os.Stderr, "mean template accuracy %v, median %v\n", templateMean, templateMedian)
+	fmt.Fprintf(os.Stderr, "mean complement accuracy %v, median %v\n", complementMean, complementMedian)
 }
 
 func callSingleStrandMethylation(vca *vclr.VcAlignment, threshold *float64) {
@@ -151,8 +171,10 @@ func callSingleStrandMethylation(vca *vclr.VcAlignment, threshold *float64) {
 		}
 		fmt.Fprintf(os.Stdout, "%v\t%v\t%v\t%v\t%v\n", read, tem_percentMethyl, com_percentMethyl, temScore, comScore)
 	}
-	fmt.Fprintf(os.Stderr, "template %% called methyl %v\n", meanFloatSlice(&tempalteMethylPercents))
-	fmt.Fprintf(os.Stderr, "complement %% called methyl %v\n", meanFloatSlice(&complementMethylPercents))
+	templateMean, templateMedian := meanMedianFloatSlice(&tempalteMethylPercents)
+	complementMean, complementMedian := meanMedianFloatSlice(&complementMethylPercents)
+	fmt.Fprintf(os.Stderr, "mean template accuracy %v, median %v\n", templateMean, templateMedian)
+	fmt.Fprintf(os.Stderr, "mean complement accuracy %v, median %v\n", complementMean, complementMedian)
 }
 
 func singleMoleculeSiteStats(vca *vclr.VcAlignment, threshold *float64) {
@@ -236,6 +258,7 @@ func main() {
 	} else {
 		alns = vca
 	}
+
 	if *readScoreT > 0.0 {
 		alns = alns.FilterByReadScore(*readScoreT)
 	}
