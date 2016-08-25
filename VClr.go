@@ -7,7 +7,7 @@ import (
 	"math"
 	"os"
 	"bufio"
-	"sort"
+	"github.com/ArtRand/stats"
 )
 
 func callGatcMethylation(vca *vclr.VcAlignment, threshold *float64) {
@@ -41,7 +41,6 @@ func callGatcMethylation(vca *vclr.VcAlignment, threshold *float64) {
 		perUnmeth := 100 * unmethyl / totMethylCalls
 		perHemi := 100 * hemi / totMethylCalls
 		fmt.Printf("%v\t%v\t%v\t%v\t%v\t%v\n", thisRead, perUnmeth, perMeth, perHemi, totMethylCalls, thisScore)
-		//fmt.Println(thisRead, perUnmeth, perMeth, perHemi, totMethylCalls)
 	}
 }
 
@@ -90,27 +89,8 @@ func calculatePercentCalledMethyl(results [][]*vclr.VariantCall) (float64, float
 }
 
 func meanMedianFloatSlice(slc *[]float64) (float64, float64) {
-	if len(*slc) == 0 {
-		return math.NaN(), math.NaN()
-	}
-	// calculate the mean
-	tot := 0.0
-	for _, i := range *slc {
-		tot += i
-	}
-	mean := tot / float64(len(*slc))
-
-	// calculate the median
-	sort.Float64s(*slc)
-	var median float64
-	l := len(*slc)
-
-	if l % 2 == 0 {
-		median = float64(((*slc)[l / 2 - 1] + (*slc)[l / 2 + 1]) / 2.0)
-	} else {
-		median = float64((*slc)[l / 2])
-	}
-
+	median, _ := stats.Median(*slc)
+	mean, _ := stats.Mean(*slc)
 	return mean, median
 }
 
@@ -149,8 +129,10 @@ func callSingleStrandVariants(vca *vclr.VcAlignment, threshold *float64, referen
 func callSingleStrandMethylation(vca *vclr.VcAlignment, threshold *float64) {
 	// first group the alignment by read
 	byRead := vca.GroupByRead()
-	tempalteMethylPercents := make([]float64, 0)
+	templateMethylPercents := make([]float64, 0)
 	complementMethylPercents := make([]float64, 0)
+	templateScores := make([]float64, 0)
+	complementScores := make([]float64, 0)
 	for read, aln := range byRead {
 		byStrand := aln.GroupByStrand()
 		_, hasTemplate := byStrand["t"]
@@ -162,19 +144,24 @@ func callSingleStrandMethylation(vca *vclr.VcAlignment, threshold *float64) {
 		if hasTemplate {
 			templateResults := vclr.CallSingleMoleculeMethylation(byStrand["t"], *threshold)
 			tem_percentMethyl, temScore = calculatePercentCalledMethyl(templateResults)
-			tempalteMethylPercents = append(tempalteMethylPercents, tem_percentMethyl)
+			templateMethylPercents = append(templateMethylPercents, tem_percentMethyl)
+			templateScores = append(templateScores, temScore)
 		}
 		if hasComplement {
 			complementResults := vclr.CallSingleMoleculeMethylation(byStrand["c"], *threshold)
 			com_percentMethyl, comScore = calculatePercentCalledMethyl(complementResults)
 			complementMethylPercents = append(complementMethylPercents, com_percentMethyl)
+			complementScores = append(complementScores, comScore)
 		}
 		fmt.Fprintf(os.Stdout, "%v\t%v\t%v\t%v\t%v\n", read, tem_percentMethyl, com_percentMethyl, temScore, comScore)
 	}
-	templateMean, templateMedian := meanMedianFloatSlice(&tempalteMethylPercents)
+	templateMean, templateMedian := meanMedianFloatSlice(&templateMethylPercents)
 	complementMean, complementMedian := meanMedianFloatSlice(&complementMethylPercents)
-	fmt.Fprintf(os.Stderr, "mean template accuracy %v, median %v\n", templateMean, templateMedian)
-	fmt.Fprintf(os.Stderr, "mean complement accuracy %v, median %v\n", complementMean, complementMedian)
+	templatePearsons, _ := stats.Pearson(templateMethylPercents, templateScores)
+	complementPearsons, _ := stats.Pearson(complementMethylPercents, complementScores)
+
+	fmt.Fprintf(os.Stderr, "mean template accuracy %v, median %v, Pearson's R %v\n", templateMean, templateMedian, templatePearsons)
+	fmt.Fprintf(os.Stderr, "mean complement accuracy %v, median %v, Pearson's R %v\n", complementMean, complementMedian, complementPearsons)
 }
 
 func singleMoleculeSiteStats(vca *vclr.VcAlignment, threshold *float64) {
