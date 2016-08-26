@@ -225,7 +225,7 @@ func main() {
 	refFasta := flag.String("r", "", "reference location")
 	threshold := flag.Float64("t", 0.0, "threshold")
 	readScoreT := flag.Float64("s", 0.0, "readScore threshold")
-	templateOnly := flag.Bool("templateOnly", false, "flag to only use template strands")
+	strandFilter := flag.String("strand", "", "specify to use only one strand")
 	tool := flag.String("tool", "smVariant", "Tool to use options are: \n\t" +
 		" single molecule variant: sm-variant\n\t" +
 		" single molecule methylation: sm-methyl\n\t" +
@@ -235,13 +235,14 @@ func main() {
 	flag.Parse()
 	vca := vclr.ParseAlignmentFile(*inFile)
 	var alns *vclr.VcAlignment
-	if *templateOnly {
+	if *strandFilter != "" {
 		byStrand := vca.GroupByStrand()
-		_, check := byStrand["t"]
+		_, check := byStrand[*strandFilter]
 		if !check {
-			panic("Didn't find any template reads?")
+			err := fmt.Sprintf("Didn't find any reads for stand %v\n", *strandFilter)
+			panic(err)
 		}
-		alns = byStrand["t"]
+		alns = byStrand[*strandFilter]
 	} else {
 		alns = vca
 	}
