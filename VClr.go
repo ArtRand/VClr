@@ -221,7 +221,7 @@ func check(ok error, msg string) {
 }
 
 func main() {
-	inFile := flag.String("f", "", "file location")
+	//inFile := flag.String("f", "", "file location")
 	refFasta := flag.String("r", "", "reference location")
 	threshold := flag.Float64("t", 0.0, "threshold")
 	readScoreT := flag.Float64("s", 0.0, "readScore threshold")
@@ -233,7 +233,7 @@ func main() {
 		" site stats: sm-site-stats\n\t" +
 		" methylation call: methyl")
 	flag.Parse()
-	vca := vclr.ParseAlignmentFile(*inFile)
+	vca := vclr.ParseAlignmentFile(bufio.NewReader(os.Stdin))
 	var alns *vclr.VcAlignment
 	if *strandFilter != "" {
 		byStrand := vca.GroupByStrand()
@@ -253,7 +253,7 @@ func main() {
 
 	if *tool == "sm-variant" {
 		fH, ok := os.Open(*refFasta)
-		check(ok, fmt.Sprintf("Error opening file %v", *inFile))
+		check(ok, fmt.Sprintf("Error opening file %v", *refFasta))
 		defer fH.Close()
 		fqr := vclr.FqReader{Reader: bufio.NewReader(fH)}
 		r, _ := fqr.Iter()

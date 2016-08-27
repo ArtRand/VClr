@@ -1,13 +1,15 @@
+
 package VClr
 
 import (
-	"os"
+	//"os"
 	"fmt"
 	"encoding/csv"
 	"io"
 	"strconv"
 	"math"
 	"sort"
+	//"bufio"
 )
 
 type AlnRecord struct {
@@ -415,13 +417,14 @@ func CallSite(siteSorted *VcAlignment, threshold float64) (string, int, float64)
 	return call, coverage, prob
 }
 
-func ParseAlignmentFile(filePath string) *VcAlignment {
-	file, err := os.Open(filePath)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	defer file.Close()
+func ParseAlignmentFile(file io.Reader) *VcAlignment {
+	//file, err := os.Open(filePath)
+	//if err != nil {
+	//	fmt.Println(err)
+	//	return nil
+	//}
+	//defer file.Close()
+
 	r := csv.NewReader(file)
 	r.Comma = '\t'
 	VcA := VcAlignmentConstruct()
