@@ -417,17 +417,9 @@ func CallSite(siteSorted *VcAlignment, threshold float64) (string, int, float64)
 	return call, coverage, prob
 }
 
-func ParseAlignmentFile(file io.Reader) *VcAlignment {
-	//file, err := os.Open(filePath)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return nil
-	//}
-	//defer file.Close()
-
+func ParseAlignmentFile(file io.Reader, vca *VcAlignment) {
 	r := csv.NewReader(file)
 	r.Comma = '\t'
-	VcA := VcAlignmentConstruct()
 	for {
 		record, err := r.Read()
 		// end-of-file is fitted into err
@@ -435,7 +427,7 @@ func ParseAlignmentFile(file io.Reader) *VcAlignment {
 			break
 		} else if err != nil {
 			fmt.Println("Error:", err)
-			return nil
+			return
 		}
 		// record is an array of string so is directly printable
 		refPos, _ := strconv.Atoi(record[1])
@@ -445,9 +437,10 @@ func ParseAlignmentFile(file io.Reader) *VcAlignment {
 		forwardStr := record[5]
 		readLabel := record[6]
 		aR := AlnRecordConstruct(refPos, base, strand, readLabel, forwardStr, prob)
-		VcA.Records = append(VcA.Records, aR)
+		//VcA.Records = append(VcA.Records, aR)
+		vca.AddRecord(aR)
 	}
-	return VcA
+	return
 }
 
 type SiteCallStats struct {

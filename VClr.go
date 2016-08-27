@@ -6,6 +6,7 @@ import (
 	vclr "github.com/ArtRand/VClr/lib"
 	"math"
 	"os"
+	"path/filepath"
 	"bufio"
 	"github.com/ArtRand/stats"
 )
@@ -221,19 +222,38 @@ func check(ok error, msg string) {
 }
 
 func main() {
-	//inFile := flag.String("f", "", "file location")
-	refFasta := flag.String("r", "", "reference location")
-	threshold := flag.Float64("t", 0.0, "threshold")
-	readScoreT := flag.Float64("s", 0.0, "readScore threshold")
-	strandFilter := flag.String("strand", "", "specify to use only one strand")
 	tool := flag.String("tool", "smVariant", "Tool to use options are: \n\t" +
 		" single molecule variant: sm-variant\n\t" +
 		" single molecule methylation: sm-methyl\n\t" +
 		" variant call: variant\n\t" +
 		" site stats: sm-site-stats\n\t" +
 		" methylation call: methyl")
+	inDir := flag.String("d", "", "directory with files")
+	refFasta := flag.String("r", "", "reference location")
+	threshold := flag.Float64("t", 0.0, "threshold")
+	readScoreT := flag.Float64("s", 0.0, "readScore threshold")
+	strandFilter := flag.String("strand", "", "specify to use only one strand")
+
 	flag.Parse()
-	vca := vclr.ParseAlignmentFile(bufio.NewReader(os.Stdin))
+
+	vca := vclr.VcAlignmentConstruct()
+
+	if *inDir == "" {
+		vclr.ParseAlignmentFile(bufio.NewReader(os.Stdin), vca)
+	} else {
+		files, err := filepath.Glob(*inDir)
+		check(err, "Problem reading directory")
+		for _, fp := range files {
+			fH, err := os.Open(fp)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Problem with file %v\n", fp)
+				continue
+			}
+			vclr.ParseAlignmentFile(fH, vca)
+			fH.Close()
+		}
+	}
+
 	var alns *vclr.VcAlignment
 	if *strandFilter != "" {
 		byStrand := vca.GroupByStrand()
